@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>⚙️ WEBRAT Control</title>
+    <style>
+        body { background: #111; color: #0f0; font-family: monospace; padding: 20px; }
+        .panel { background: #222; border: 2px solid #f00; padding: 20px; margin: 20px; }
+        .btn { background: #00a; color: white; border: 1px solid #0ff; padding: 15px; margin: 10px; cursor: pointer; }
+        .btn:hover { background: #00f; }
+    </style>
+</head>
+<body>
+    <h1>⚙️ WEBRAT CONTROL PANEL</h1>
+    
+    <div class="panel">
+        <h2>🎮 БЫСТРЫЕ КОМАНДЫ</h2>
+        <button class="btn" onclick="sendCmd('sysinfo')">📊 Информация о системе</button>
+        <button class="btn" onclick="sendCmd('screenshot')">📸 Скриншот экрана</button>
+        <button class="btn" onclick="sendCmd('shutdown')">💀 Выключить ПК</button>
+        <button class="btn" onclick="sendCmd('overheat')">🔥 Нагреть процессор</button>
+    </div>
+    
+    <script>
+        function sendCmd(cmd) {
+            alert('Команда отправлена: ' + cmd);
+            // Здесь будет реальная отправка на сервер
+        }
+    </script>
+</body>
+</html>
