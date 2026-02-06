@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎥 Стриминг WEBRAT</title>
+    <style>
+        body { 
+            background: #000; 
+            color: #0f0; 
+            font-family: monospace;
+            margin: 0;
+            padding: 20px;
+        }
+        
+        .header {
+            background: rgba(0, 50, 0, 0.8);
+            padding: 15px;
+            text-align: center;
+            border-bottom: 3px solid #0f0;
+            margin-bottom: 20px;
+        }
+        
+        .stream-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stream-box {
+            background: #111;
+            border: 2px solid #0f0;
+            border-radius: 10px;
+            padding: 15px;
+            position: relative;
+        }
+        
+        .stream-title {
+            color: #0f0;
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        
+        .video-placeholder {
+            width: 100%;
+            height: 300px;
+            background: #000;
+            border: 1px solid #0f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .control-btn {
+            background: #0a0;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: monospace;
+            flex: 1;
+            min-width: 120px;
+        }
+        
+        .control-btn:hover {
+            background: #0f0;
+        }
+        
+        .control-btn.danger {
+            background: #a00;
+        }
+        
+        .control-btn.danger:hover {
+            background: #f00;
+        }
+        
+        .logs {
+            background: #111;
+            border: 1px solid #0f0;
+            padding: 15px;
+            margin-top: 20px;
+            height: 200px;
+            overflow-y: auto;
+            font-size: 0.9rem;
+        }
+        
+        .log-entry {
+            border-bottom: 1px solid #333;
+            padding: 5px 0;
+        }
+        
+        .log-time {
+            color: #0f0;
+        }
+        
+        .log-message {
+            color: #fff;
+        }
+        
+        /* Анимация подключения */
+        @keyframes connecting {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+        
+        .connecting {
+            animation: connecting 1s infinite;
+            color: #ff0;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🎥 WEBRAT СТРИМИНГ СИСТЕМЫ</h1>
+        <p>Прямая трансляция с веб-камеры и монитора | Запись | Скриншоты</p>
+    </div>
+    
+    <div class="stream-container">
+        <!-- Веб-камера -->
+        <div class="stream-box">
+            <h2 class="stream-title">📷 ВЕБ-КАМЕРА</h2>
+            <div class="video-placeholder" id="webcamStream">
+                <div class="connecting">🔄 ПОДКЛЮЧЕНИЕ К ВЕБ-КАМЕРЕ...</div>
+            </div>
+            <div class="controls">
+                <button class="control-btn" onclick="startWebcam()">▶️ Старт стрима</button>
+                <button class="control-btn" onclick="captureWebcam()">📸 Сделать снимок</button>
+                <button class="control-btn" onclick="recordWebcam()">⏺️ Начать запись</button>
+                <button class="control-btn danger" onclick="stopWebcam()">⏹️ Стоп</button>
+            </div>
+        </div>
+        
+        <!-- Монитор -->
+        <div class="stream-box">
+            <h2 class="stream-title">🖥️ ЭКРАН МОНИТОРА</h2>
+            <div class="video-placeholder" id="screenStream">
+                <div class="connecting">🔄 ЗАХВАТ ЭКРАНА...</div>
+            </div>
+            <div class="controls">
+                <button class="control-btn" onclick="startScreenShare()">▶️ Захват экрана</button>
+                <button class="control-btn" onclick="captureScreen()">📸 Скриншот</button>
+                <button class="control-btn" onclick="recordScreen()">⏺️ Запись экрана</button>
+                <button class="control-btn danger" onclick="stopScreenShare()">⏹️ Стоп</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Дополнительные функции -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 30px 0;">
+        <button class="control-btn" onclick="toggleWebcamLight()">💡 Включить свет камеры</button>
+        <button class="control-btn" onclick="takeSecretPhoto()">🕵️ Скрытый снимок</button>
+        <button class="control-btn" onclick="streamAudio()">🎤 Запись аудио</button>
+        <button class="control-btn danger" onclick="disableWebcam()">🚫 Отключить камеру</button>
+    </div>
+    
+    <!-- Логи -->
+    <div class="stream-box">
+        <h2 class="stream-title">📊 ЛОГИ СТРИМИНГА</h2>
+        <div class="logs" id="streamLogs">
+            <div class="log-entry">
+                <span class="log-time">[12:00:00]</span>
+                <span class="log-message"> Система стриминга инициализирована</span>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let webcamStream = null;
+        let screenStream = null;
+        let mediaRecorder = null;
+        let recordedChunks = [];
+        let logs = [];
+        
+        // Добавление логов
+        function addLog(message) {
+            const now = new Date();
+            const time = `[${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}]`;
+            const logEntry = document.createElement('div');
+            logEntry.className = 'log-entry';
+            logEntry.innerHTML = `<span class="log-time">${time}</span><span class="log-message"> ${message}</span>`;
+            document.getElementById('streamLogs').prepend(logEntry);
+            logs.push(`${time} ${message}`);
+            
+            // Ограничение логов
+            if (logs.length > 50) {
+                logs.shift();
+                const entries = document.querySelectorAll('.log-entry');
+                if (entries.length > 50) {
+                    entries[entries.length - 1].remove();
+                }
+            }
+        }
+        
+        // Веб-камера
+        async function startWebcam() {
+            try {
+                addLog('Запуск веб-камеры...');
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { width: 1280, height: 720 },
+                    audio: true 
+                });
+                
+                webcamStream = stream;
+                const videoElement = document.createElement('video');
+                videoElement.srcObject = stream;
+                videoElement.autoplay = true;
+                videoElement.style.width = '100%';
+                videoElement.style.height = '100%';
+                
+                const placeholder = document.getElementById('webcamStream');
+                placeholder.innerHTML = '';
+                placeholder.appendChild(videoElement);
+                
+                addLog('Веб-камера активирована');
+            } catch (error) {
+                addLog(`Ошибка камеры: ${error.message}`);
+                document.getElementById('webcamStream').innerHTML = '❌ Доступ к камере запрещен';
+            }
+        }
+        
+        // Захват экрана
+        async function startScreenShare() {
+            try {
+                addLog('Захват экрана...');
+                const stream = await navigator.mediaDevices.getDisplayMedia({
+                    video: { cursor: "always" },
+                    audio: true
+                });
+                
+                screenStream = stream;
+                const videoElement = document.createElement('video');
+                videoElement.srcObject = stream;
+                videoElement.autoplay = true;
+                videoElement.style.width = '100%';
+                videoElement.style.height = '100%';
+                
+                const placeholder = document.getElementById('screenStream');
+                placeholder.innerHTML = '';
+                placeholder.appendChild(videoElement);
+                
+                addLog('Экран захвачен');
+                
+                // Обработка остановки пользователем
+                stream.getVideoTracks()[0].addEventListener('ended', () => {
+                    addLog('Пользователь остановил захват экрана');
+                    stopScreenShare();
+                });
+            } catch (error) {
+                addLog(`Ошибка захвата экрана: ${error.message}`);
+            }
+        }
+        
+        // Снимок с веб-камеры
+        function captureWebcam() {
+            if (!webcamStream) {
+                addLog('Веб-камера не активна');
+                return;
+            }
+            
+            const canvas = document.createElement('canvas');
+            const video = document.querySelector('#webcamStream video');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            canvas.getContext('2d').drawImage(video, 0, 0);
+            
+            const link = document.createElement('a');
+            link.download = `webcam-${Date.now()}.png`;
+            link.href = canvas.toDataURL();
+            link.click();
+            
+            addLog('Снимок с веб-камеры сохранен');
+        }
+        
+        // Скриншот экрана
+        function captureScreen() {
+            if (!screenStream) {
+                addLog('Захват экрана не активен');
+                return;
+            }
+            
+            const canvas = document.createElement('canvas');
+            const video = document.querySelector('#screenStream video');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            canvas.getContext('2d').drawImage(video, 0, 0);
+            
+            const link = document.createElement('a');
+            link.download = `screen-${Date.now()}.png`;
+            link.href = canvas.toDataURL();
+            link.click();
+            
+            addLog('Скриншот экрана сохранен');
+        }
+        
+        // Запись видео
+        function recordWebcam() {
+            if (!webcamStream) {
+                addLog('Веб-камера не активна для записи');
+                return;
+            }
+            
+            mediaRecorder = new MediaRecorder(webcamStream);
+            recordedChunks = [];
+            
+            mediaRecorder.ondataavailable = (event) => {
+                if (event.data.size > 0) {
+                    recordedChunks.push(event.data);
+                }
+            };
+            
+            mediaRecorder.onstop = () => {
+                const blob = new Blob(recordedChunks, { type: 'video/webm' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.download = `webcam-recording-${Date.now()}.webm`;
+                link.href = url;
+                link.click();
+                addLog('Запись с веб-камеры сохранена');
+            };
+            
+            mediaRecorder.start();
+            addLog('Запись с веб-камеры начата');
+        }
+        
+        // Остановка
+        function stopWebcam() {
+            if (webcamStream) {
+                webcamStream.getTracks().forEach(track => track.stop());
+                webcamStream = null;
+                document.getElementById('webcamStream').innerHTML = '<div class="connecting">🔄 ПОДКЛЮЧЕНИЕ К ВЕБ-КАМЕРЕ...</div>';
+                addLog('Веб-камера остановлена');
+            }
+            
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+            }
+        }
+        
+        function stopScreenShare() {
+            if (screenStream) {
+                screenStream.getTracks().forEach(track => track.stop());
+                screenStream = null;
+                document.getElementById('screenStream').innerHTML = '<div class="connecting">🔄 ЗАХВАТ ЭКРАНА...</div>';
+                addLog('Захват экрана остановлен');
+            }
+        }
+        
+        // Дополнительные функции
+        function toggleWebcamLight() {
+            addLog('Включение света камеры...');
+            // Имитация включения LED камеры
+        }
+        
+        function takeSecretPhoto() {
+            addLog('Скрытый снимок активирован...');
+            // Скрытый захват без индикации
+        }
+        
+        function disableWebcam() {
+            addLog('Отключение камеры на целевом устройстве...');
+            // Команда отключения драйвера камеры
+        }
+        
+        // Имитация стрима с сервера
+        function simulateStreaming() {
+            setInterval(() => {
+                if (!webcamStream) {
+                    const status = document.querySelector('#webcamStream .connecting');
+                    if (status) {
+                        status.textContent = '🔄 ПОДКЛЮЧЕНИЕ К ВЕБ-КАМЕРЕ... ' + new Date().getSeconds();
+                    }
+                }
+                
+                if (!screenStream) {
+                    const status = document.querySelector('#screenStream .connecting');
+                    if (status) {
+                        status.textContent = '🔄 ЗАХВАТ ЭКРАНА... ' + new Date().getSeconds();
+                    }
+                }
+            }, 1000);
+        }
+        
+        // Инициализация
+        addLog('Система стриминга инициализирована');
+        simulateStreaming();
+        
+        // Автоматический запуск при загрузке (опционально)
+        // setTimeout(startWebcam, 1000);
+        // setTimeout(startScreenShare, 2000);
+    </script>
+</body>
+</html>
